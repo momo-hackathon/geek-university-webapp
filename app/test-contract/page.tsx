@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import geekCourseMarketAbi from '@/abis/geekCourseMarket.json';
-import geekTokenAbi from '@/abis/GeekToken.json';
+import geekTokenAbi from '@/abis/geekToken.json';
 
 const GEEK_COURSE_MARKET_ADDRESS: string = '0xb8183861ec46D734B52cb1b15642FA1F0eAd956D';
 const GEEK_TOKEN_ADDRESS: string = '0x0ec34267121eaBeec3E30A6cAcFba3Ea782807B1';
