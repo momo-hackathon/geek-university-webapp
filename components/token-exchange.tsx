@@ -59,10 +59,10 @@ export default function TokenExchange() {
     <section className="py-16 md:py-24">
       <div className="container">
         <div className="mx-auto max-w-md">
-          <h2 className="text-center text-3xl font-bold tracking-tight mb-8">Exchange Tokens</h2>
+          <h2 className="text-center text-3xl font-bold tracking-tight mb-8 mt-4">Exchange Tokens</h2>
 
           <Card className="backdrop-blur-sm bg-card/80 border-muted">
-            <CardHeader>
+            <CardHeader className="mt-4">
               <CardTitle>Swap Tokens</CardTitle>
               <CardDescription>Exchange your tokens at the best rates</CardDescription>
             </CardHeader>
@@ -125,7 +125,7 @@ export default function TokenExchange() {
             </CardContent>
             <CardFooter>
               <Button
-                className="w-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                className="w-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 mb-4 mt-4 h-14 text-lg"
                 onClick={handleExchange}
                 disabled={isLoading}
               >

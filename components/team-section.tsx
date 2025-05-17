@@ -52,7 +52,7 @@ export default function TeamSection() {
                   className="object-cover transition-transform hover:scale-105"
                 />
               </div>
-              <CardHeader className="p-4">
+              <CardHeader className="p-4 mt-3">
                 <CardTitle>{member.name}</CardTitle>
                 <CardDescription>{member.role}</CardDescription>
               </CardHeader>

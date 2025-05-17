@@ -210,7 +210,7 @@ export default function CourseListing() {
                   </Badge>
                 </div>
               </div>
-              <CardHeader className="p-4">
+              <CardHeader className="p-4 mt-4">
                 <div className="flex justify-between items-start">
                   <h3 className="font-bold text-lg">
                     {course.name[currentLanguage as keyof typeof course.name] || course.name.en}
@@ -222,12 +222,8 @@ export default function CourseListing() {
                 <p className="text-sm text-muted-foreground">
                   {course.description[currentLanguage as keyof typeof course.description] || course.description.en}
                 </p>
-                <div className="mt-4 text-xs text-muted-foreground">
-                  {currentLanguage === "en" ? "Duration: " : currentLanguage === "zh" ? "持续时间: " : "기간: "}
-                  {course.duration[currentLanguage as keyof typeof course.duration] || course.duration.en}
-                </div>
               </CardContent>
-              <CardFooter className="p-4 pt-0">
+              <CardFooter className="p-4 pt-0 mt-4 mb-4">
                 <Link href="/course" className="w-full">
                   <Button variant="outline" className="w-full rounded-full">
                     {getViewMoreText()}

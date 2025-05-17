@@ -51,17 +51,7 @@ export default function Header() {
   }
 
   const connectWallet = async () => {
-    if (typeof window.ethereum !== "undefined") {
-      try {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" })
-        setWalletAddress(accounts[0])
-        setIsWalletConnected(true)
-      } catch (error) {
-        console.error("Error connecting wallet:", error)
-      }
-    } else {
-      alert("Please install MetaMask or another Web3 wallet")
-    }
+
   }
 
   const disconnectWallet = () => {
@@ -152,9 +142,6 @@ export default function Header() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setTheme("dark")}>
                 {currentLanguage === "en" ? "Dark" : currentLanguage === "zh" ? "深色" : "다크"}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setTheme("system")}>
-                {currentLanguage === "en" ? "System" : currentLanguage === "zh" ? "系统" : "시스템"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
