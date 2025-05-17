@@ -72,8 +72,6 @@ export default function Header() {
   const menuItems = [
     { name: "Home", href: "/" },
     { name: "Courses", href: "/course" },
-    { name: "Resources", href: "/resources" },
-    { name: "Community", href: "/community" },
     { name: "About", href: "/about" },
   ]
 
@@ -106,19 +104,11 @@ export default function Header() {
                       ? "首页"
                       : item.name === "Courses"
                         ? "课程"
-                        : item.name === "Resources"
-                          ? "资源"
-                          : item.name === "Community"
-                            ? "社区"
                             : "关于"
                     : item.name === "Home"
                       ? "홈"
                       : item.name === "Courses"
                         ? "코스"
-                        : item.name === "Resources"
-                          ? "리소스"
-                          : item.name === "Community"
-                            ? "커뮤니티"
                             : "소개"}
               </Link>
             ))}
