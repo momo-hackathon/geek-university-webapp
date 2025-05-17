@@ -179,9 +179,11 @@ export function useCourseData() {
   const { 
     data: purchaseHash, 
     error: purchaseTxError, 
-    isPending: isSubmittingPurchase, 
     writeContractAsync 
   } = useWriteContract();
+
+  // 新增状态来跟踪特定课程的购买状态
+  const [purchasingCourseId, setPurchasingCourseId] = useState<string | null>(null);
 
   const purchaseCourse = useCallback(async (web2CourseId: string) => {
     if (!writeContractAsync) {
@@ -195,23 +197,26 @@ export function useCourseData() {
         throw new Error("合约地址未正确配置。");
     }
     
-    // Find the course to get its chain ID, as purchaseCourse might need it or for other logic
     const courseToBuy = courses.find(c => c.web2CourseId === web2CourseId);
     if (!courseToBuy) {
         console.error(`Course with web2CourseId ${web2CourseId} not found in local list.`);
         throw new Error("课程未找到。");
     }
 
+    setPurchasingCourseId(web2CourseId); // 开始购买特定课程
+
     try {
       const txHash = await writeContractAsync({
         address: GEEK_COURSE_MARKET_ADDRESS,
         abi: geekCourseMarketABI,
         functionName: 'purchaseCourse',
-        args: [web2CourseId],
+        args: [web2CourseId], // 智能合约期望的是 web2CourseId
       });
+      // purchaseHash 会被 useWaitForTransactionReceipt 自动追踪
       return txHash;
     } catch (err) {
       console.error("购买课程时出错:", err);
+      setPurchasingCourseId(null); // 出错时清除购买状态
       throw err; 
     }
   }, [writeContractAsync, accountAddress, courses]);
@@ -219,25 +224,28 @@ export function useCourseData() {
   const { 
     isLoading: isConfirmingPurchase, 
     isSuccess: purchaseConfirmed, 
-    error: purchaseConfirmationError 
+    error: purchaseConfirmationError,
+    status: transactionStatus, // 可以获取更详细的交易状态
   } = useWaitForTransactionReceipt({
-    hash: purchaseHash,
+    hash: purchaseHash, // 当 purchaseHash 变化时，这个 hook 会重新执行
   });
+
+  // 当交易完成（成功或失败）时，清除 purchasingCourseId
+  useEffect(() => {
+    if (purchaseHash && (transactionStatus === 'success' || transactionStatus === 'error')) {
+      setPurchasingCourseId(null);
+    }
+  }, [transactionStatus, purchaseHash]);
 
   // Effect to refetch user's purchased courses after a successful purchase
   useEffect(() => {
     if (purchaseConfirmed) {
       fetchUserPurchasedCourses(); // Refetch user's courses
-      // Optionally, also refetch all course data if purchase might change global state (e.g., availability)
-      // refetchCourses(); 
     }
   }, [purchaseConfirmed, fetchUserPurchasedCourses]);
 
   // 合并购买过程中的错误
   const purchaseError = purchaseTxError || purchaseConfirmationError;
-  // 合并购买过程中的加载状态
-  const isPurchasing = isSubmittingPurchase || isConfirmingPurchase;
-
 
   return {
     // 课程列表
@@ -249,7 +257,8 @@ export function useCourseData() {
 
     // 购买课程
     purchaseCourse,
-    isPurchasing,
+    purchasingCourseId, // 导出当前正在购买的课程 ID
+    isConfirmingPurchase, // 可以用来显示确认中的状态，如果需要更细致的区分
     purchaseConfirmed,
     purchaseError,
     purchaseHash,
