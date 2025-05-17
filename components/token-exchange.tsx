@@ -1,59 +1,30 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowDownUp, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-
-const tokens = [
-  { symbol: "ETH", name: "Ethereum", rate: 1 },
-  { symbol: "COURSE", name: "Course Token", rate: 2000 },
-  { symbol: "BTC", name: "Bitcoin", rate: 0.06 },
-  { symbol: "USDT", name: "Tether", rate: 3500 },
-]
+import { useToken, tokens } from "@/hooks/useWrapToken"
+import { formatUnits, parseUnits } from "ethers"
 
 export default function TokenExchange() {
-  const [fromToken, setFromToken] = useState("ETH")
-  const [toToken, setToToken] = useState("COURSE")
-  const [fromAmount, setFromAmount] = useState("1")
-  const [toAmount, setToAmount] = useState("2000")
-  const [isLoading, setIsLoading] = useState(false)
-
-  const handleFromAmountChange = (value: string) => {
-    setFromAmount(value)
-    const fromRate = tokens.find((t) => t.symbol === fromToken)?.rate || 1
-    const toRate = tokens.find((t) => t.symbol === toToken)?.rate || 1
-    const calculatedAmount = (Number.parseFloat(value) || 0) * (toRate / fromRate)
-    setToAmount(calculatedAmount.toString())
-  }
-
-  const handleToAmountChange = (value: string) => {
-    setToAmount(value)
-    const fromRate = tokens.find((t) => t.symbol === fromToken)?.rate || 1
-    const toRate = tokens.find((t) => t.symbol === toToken)?.rate || 1
-    const calculatedAmount = (Number.parseFloat(value) || 0) * (fromRate / toRate)
-    setFromAmount(calculatedAmount.toString())
-  }
-
-  const swapTokens = () => {
-    const temp = fromToken
-    setFromToken(toToken)
-    setToToken(temp)
-    setFromAmount(toAmount)
-    setToAmount(fromAmount)
-  }
-
-  const handleExchange = () => {
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      // Reset or show success
-    }, 2000)
-  }
+  const {
+    fromToken,
+    toToken,
+    fromAmount,
+    toAmount,
+    isLoading,
+    error,
+    exchangeRate,
+    setFromToken,
+    setToToken,
+    handleFromAmountChange,
+    handleToAmountChange,
+    swapTokens,
+    handleExchange
+  } = useToken()
 
   return (
     <section className="py-16 md:py-24">
@@ -76,8 +47,21 @@ export default function TokenExchange() {
                     value={fromAmount}
                     onChange={(e) => handleFromAmountChange(e.target.value)}
                     className="flex-1"
+                    disabled={isLoading}
+                    placeholder="0.0"
+                    min="0"
+                    step="any"
                   />
-                  <Select value={fromToken} onValueChange={setFromToken}>
+                  <Select 
+                    value={fromToken.symbol} 
+                    onValueChange={(value) => {
+                      const token = tokens.find(t => t.symbol === value)
+                      if (token) {
+                        setFromToken(token)
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
                     <SelectTrigger className="w-[120px]">
                       <SelectValue placeholder="Select token" />
                     </SelectTrigger>
@@ -93,7 +77,13 @@ export default function TokenExchange() {
               </div>
 
               <div className="flex justify-center">
-                <Button variant="ghost" size="icon" onClick={swapTokens} className="rounded-full h-10 w-10 bg-muted/50">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={swapTokens} 
+                  className="rounded-full h-10 w-10 bg-muted/50 hover:bg-muted" 
+                  disabled={isLoading}
+                >
                   <ArrowDownUp className="h-4 w-4" />
                 </Button>
               </div>
@@ -107,8 +97,21 @@ export default function TokenExchange() {
                     value={toAmount}
                     onChange={(e) => handleToAmountChange(e.target.value)}
                     className="flex-1"
+                    disabled={isLoading}
+                    placeholder="0.0"
+                    min="0"
+                    step="any"
                   />
-                  <Select value={toToken} onValueChange={setToToken}>
+                  <Select 
+                    value={toToken.symbol} 
+                    onValueChange={(value) => {
+                      const token = tokens.find(t => t.symbol === value)
+                      if (token) {
+                        setToToken(token)
+                      }
+                    }}
+                    disabled={isLoading}
+                  >
                     <SelectTrigger className="w-[120px]">
                       <SelectValue placeholder="Select token" />
                     </SelectTrigger>
@@ -122,12 +125,24 @@ export default function TokenExchange() {
                   </Select>
                 </div>
               </div>
+
+              {exchangeRate !== null && typeof exchangeRate === 'number' && (
+                <div className="text-sm text-muted-foreground text-center">
+                  Exchange Rate: 1 {fromToken.symbol} = {formatUnits(parseUnits(exchangeRate.toFixed(18), 18), 18)} {toToken.symbol}
+                </div>
+              )}
+
+              {error && (
+                <div className="text-sm text-red-500 text-center">
+                  {error}
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               <Button
                 className="w-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 mb-4 mt-4 h-14 text-lg"
                 onClick={handleExchange}
-                disabled={isLoading}
+                disabled={isLoading || !fromAmount || !toAmount || !!error}
               >
                 {isLoading ? (
                   <>
