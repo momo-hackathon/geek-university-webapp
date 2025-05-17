@@ -8,14 +8,17 @@ import {
   useConfig
 } from 'wagmi';
 import GEEK_COURSE_MARKET_ABI_FULL from '../abis/geekCourseMarket.json';
+import GEEK_TOKEN_ABI_FULL from '../abis/geekToken.json';
 
 const imageUrlLists = ['https://iihe.lk/wp-content/uploads/2024/12/Blockchain-1-1024x614-1.webp', 'https://www.coinsclone.com/wp-content/uploads/2023/08/DeFi-Smart-Contract-Development-Company-856x467.png', 'https://thepaymentsassociation.org/wp-content/uploads/sites/7/2023/09/DEFI.png', 'https://www.whataportrait.com/media/wordpress/5f3cfbe5e12c6e5d1d323934b8f68676.jpg', 'https://www.wedigraf.com/wp-content/uploads/2025/02/web3-certification-trainin-at-wedigraf-tech-hub-port-harcourt-and-uyo-nigeria-2048x1152.jpg', 'https://www.consultia.co/wp-content/uploads/2024/04/IMG_0595.webp']
 
 // 使用 ABI 文件中的 abi 数组
 const geekCourseMarketABI = GEEK_COURSE_MARKET_ABI_FULL.abi;
+const geekTokenABI = GEEK_TOKEN_ABI_FULL.abi;
 
-// 替换为你的实际合约地址或通过环境变量配置
+// 从环境变量加载合约地址，提供回退地址
 const GEEK_COURSE_MARKET_ADDRESS = (process.env.NEXT_PUBLIC_GEEK_COURSE_MARKET_ADDRESS || '0xb8183861ec46D734B52cb1b15642FA1F0eAd956D') as `0x${string}`;
+const GEEK_TOKEN_ADDRESS = (process.env.NEXT_PUBLIC_GEEK_TOKEN_ADDRESS || '0x0ec34267121eaBeec3E30A6cAcFba3Ea782807B1') as `0x${string}`;
 
 export interface Course {
   id: bigint; // 链上课程ID (courseId)
@@ -49,18 +52,15 @@ export function useCourseData() {
     address: GEEK_COURSE_MARKET_ADDRESS,
     abi: geekCourseMarketABI,
     functionName: 'courseCount',
-    // chainId: yourChainId, // 如果需要指定链
   });
 
   const courseCount = courseCountData ? BigInt(courseCountData.toString()) : undefined;
 
   const fetchAllCourses = useCallback(async () => {
     if (!publicClient) {
-      // console.warn("Public client not available yet for fetching courses.");
       return;
     }
     if (courseCount === undefined) {
-        // console.warn("Course count not available yet.");
         if (courseCountError) {
             setFetchCoursesError(courseCountError);
         }
@@ -87,7 +87,7 @@ export function useCourseData() {
       }
 
       const results = await publicClient.multicall({
-          contracts: calls as any, // any cast for simplicity with viem multicall typing
+          contracts: calls as any,
           allowFailure: true, 
       });
 
@@ -95,19 +95,18 @@ export function useCourseData() {
       results.forEach((result, index) => {
         if (result.status === 'success' && result.result) {
           const [web2CourseId, name, price, isActive, creator] = result.result as [string, string, bigint, boolean, `0x${string}`];
-          // 使用 imageUrlLists 中的图片，如果课程数量超过图片数量，则循环使用
           const imageUrl = imageUrlLists[index % imageUrlLists.length]; 
           const description = `这是关于 ${name} 课程的详细描述。学习这门课程，你将掌握 ${name} 的核心知识和实践技能。非常适合希望在相关领域深入发展的学员。`;
           
           fetchedCoursesData.push({
-            id: BigInt(index + 1), // courseId 是从 1 开始的
+            id: BigInt(index + 1),
             web2CourseId,
             name,
             price,
             isActive,
             creator,
-            imageUrl, // 添加 imageUrl
-            description, // 添加 description
+            imageUrl,
+            description,
           });
         } else {
           console.warn(`Failed to fetch course with ID ${index + 1}: ${result.error?.message}`);
@@ -130,7 +129,7 @@ export function useCourseData() {
   
   const fetchUserPurchasedCourses = useCallback(async () => {
     if (!publicClient || !accountAddress || courses.length === 0) {
-      setUserPurchasedCourseIds(new Set()); // Reset if no account or courses loaded
+      setUserPurchasedCourseIds(new Set());
       return;
     }
     setIsLoadingUserCourses(true);
@@ -139,131 +138,235 @@ export function useCourseData() {
         address: GEEK_COURSE_MARKET_ADDRESS,
         abi: geekCourseMarketABI,
         functionName: 'userCourses',
-        args: [accountAddress, course.id], // userCourses takes user address and courseId
+        args: [accountAddress, course.id],
       }));
       
       const results = await publicClient.multicall({ 
-          contracts: calls as any, // any cast for simplicity
+          contracts: calls as any,
           allowFailure: true 
       });
 
       const purchasedIds = new Set<bigint>();
       results.forEach((result, index) => {
         if (result.status === 'success' && result.result === true) {
-          // courses[index].id should correspond to the courseId used in the call
           purchasedIds.add(courses[index].id);
         }
       });
       setUserPurchasedCourseIds(purchasedIds);
     } catch (e) {
       console.error("Error fetching user purchased courses:", e);
-      // Optionally set an error state for user courses here
     } finally {
       setIsLoadingUserCourses(false);
     }
-  }, [publicClient, accountAddress, courses]); // courses is a dependency
+  }, [publicClient, accountAddress, courses]);
 
   useEffect(() => {
-    // Fetch user courses when account or the list of courses changes
     fetchUserPurchasedCourses();
-  }, [fetchUserPurchasedCourses]); // fetchUserPurchasedCourses itself has dependencies: publicClient, accountAddress, courses
+  }, [fetchUserPurchasedCourses]);
 
-  const refetchCourses = useCallback(async () => { // Renamed back from refetchAllData for now, or ensure it's exported if different
+  const refetchCourses = useCallback(async () => {
     await refetchCourseCount(); 
-    // fetchAllCourses will be triggered by useEffect on courseCount change
-    // fetchUserPurchasedCourses will be triggered by useEffect on courses change
   }, [refetchCourseCount]);
 
-
-  // --- 购买课程逻辑 ---
   const { 
-    data: purchaseHash, 
-    error: purchaseTxError, 
-    writeContractAsync 
+    data: internalMarketPurchaseTxHash, 
+    error: internalMarketPurchaseTxError, 
+    writeContractAsync: purchaseMarketWriteAsync,
+    reset: resetMarketPurchase
   } = useWriteContract();
 
-  // 新增状态来跟踪特定课程的购买状态
+  const { 
+    isLoading: internalIsConfirmingMarket, 
+    isSuccess: internalMarketPurchaseConfirmed, 
+    error: internalMarketPurchaseConfirmationError,
+    status: internalMarketPurchaseStatus
+  } = useWaitForTransactionReceipt({
+    hash: internalMarketPurchaseTxHash,
+  });
+
+  const { 
+    data: internalApproveTxHash, 
+    error: internalApproveTxError, 
+    writeContractAsync: approveTokenWriteAsync,
+    reset: resetApprove
+  } = useWriteContract();
+
+  const { 
+    isLoading: internalIsConfirmingApproval, 
+    isSuccess: internalApprovalConfirmed, 
+    error: internalApprovalConfirmationError,
+    status: internalApprovalStatus
+  } = useWaitForTransactionReceipt({
+    hash: internalApproveTxHash,
+  });
+  
   const [purchasingCourseId, setPurchasingCourseId] = useState<string | null>(null);
+  const [pendingPurchaseInfo, setPendingPurchaseInfo] = useState<{ web2CourseId: string, price: bigint } | null>(null);
+
+  const [effectivePurchaseHash, setEffectivePurchaseHash] = useState<`0x${string}` | undefined>();
+  const [effectivePurchaseError, setEffectivePurchaseError] = useState<Error | null>(null);
+  const [effectiveIsConfirming, setEffectiveIsConfirming] = useState<boolean>(false);
+  const [effectivePurchaseConfirmed, setEffectivePurchaseConfirmed] = useState<boolean>(false);
+
+  const resetAllActionStates = useCallback(() => {
+    setEffectivePurchaseHash(undefined);
+    setEffectivePurchaseError(null);
+    setEffectiveIsConfirming(false);
+    setEffectivePurchaseConfirmed(false);
+    setPendingPurchaseInfo(null);
+    resetApprove();
+    resetMarketPurchase();
+  }, [resetApprove, resetMarketPurchase]);
 
   const purchaseCourse = useCallback(async (web2CourseId: string) => {
-    if (!writeContractAsync) {
-      console.error("Purchase function (writeContractAsync) is not available.");
-      throw new Error("购买功能尚未准备好。");
+    if (!approveTokenWriteAsync || !purchaseMarketWriteAsync) {
+      console.error("Purchase or Approve function is not available.");
+      const err = new Error("购买或授权功能尚未准备好。");
+      setEffectivePurchaseError(err);
+      throw err;
     }
     if (!accountAddress) {
-        throw new Error("钱包未连接。");
+      const err = new Error("钱包未连接。");
+      setEffectivePurchaseError(err);
+      throw err;
     }
-    if (!GEEK_COURSE_MARKET_ADDRESS || GEEK_COURSE_MARKET_ADDRESS.startsWith('0xYour')) {
-        throw new Error("合约地址未正确配置。");
+    if (!GEEK_COURSE_MARKET_ADDRESS || GEEK_COURSE_MARKET_ADDRESS.startsWith('0xYour') || !GEEK_TOKEN_ADDRESS || GEEK_TOKEN_ADDRESS.startsWith('0xYour')) {
+      const err = new Error("合约地址未正确配置。");
+      setEffectivePurchaseError(err);
+      throw err;
     }
     
     const courseToBuy = courses.find(c => c.web2CourseId === web2CourseId);
     if (!courseToBuy) {
-        console.error(`Course with web2CourseId ${web2CourseId} not found in local list.`);
-        throw new Error("课程未找到。");
+      const err = new Error("课程未找到。");
+      console.error(`Course with web2CourseId ${web2CourseId} not found in local list.`);
+      setEffectivePurchaseError(err);
+      throw err;
     }
 
-    setPurchasingCourseId(web2CourseId); // 开始购买特定课程
+    setPurchasingCourseId(web2CourseId);
+    resetAllActionStates();
 
-    try {
-      const txHash = await writeContractAsync({
-        address: GEEK_COURSE_MARKET_ADDRESS,
-        abi: geekCourseMarketABI,
-        functionName: 'purchaseCourse',
-        args: [web2CourseId], // 智能合约期望的是 web2CourseId
-      });
-      // purchaseHash 会被 useWaitForTransactionReceipt 自动追踪
-      return txHash;
-    } catch (err) {
-      console.error("购买课程时出错:", err);
-      setPurchasingCourseId(null); // 出错时清除购买状态
-      throw err; 
+    if (courseToBuy.price === BigInt(0)) {
+      try {
+        const txHash = await purchaseMarketWriteAsync({
+          address: GEEK_COURSE_MARKET_ADDRESS,
+          abi: geekCourseMarketABI,
+          functionName: 'purchaseCourse',
+          args: [web2CourseId],
+        });
+        setEffectivePurchaseHash(txHash);
+      } catch (err: any) {
+        console.error("购买免费课程时出错:", err);
+        setEffectivePurchaseError(err);
+        setPurchasingCourseId(null);
+        throw err;
+      }
+    } else {
+      setPendingPurchaseInfo({ web2CourseId, price: courseToBuy.price });
+      try {
+        const txHash = await approveTokenWriteAsync({
+          address: GEEK_TOKEN_ADDRESS,
+          abi: geekTokenABI,
+          functionName: 'approve',
+          args: [GEEK_COURSE_MARKET_ADDRESS, courseToBuy.price],
+        });
+        setEffectivePurchaseHash(txHash);
+      } catch (err: any) {
+        console.error("授权代币时出错:", err);
+        setEffectivePurchaseError(err);
+        setPendingPurchaseInfo(null);
+        setPurchasingCourseId(null);
+        throw err;
+      }
     }
-  }, [writeContractAsync, accountAddress, courses]);
+  }, [
+    accountAddress, courses, approveTokenWriteAsync, purchaseMarketWriteAsync, 
+    resetAllActionStates, geekCourseMarketABI, geekTokenABI
+  ]);
 
-  const { 
-    isLoading: isConfirmingPurchase, 
-    isSuccess: purchaseConfirmed, 
-    error: purchaseConfirmationError,
-    status: transactionStatus, // 可以获取更详细的交易状态
-  } = useWaitForTransactionReceipt({
-    hash: purchaseHash, // 当 purchaseHash 变化时，这个 hook 会重新执行
-  });
-
-  // 当交易完成（成功或失败）时，清除 purchasingCourseId
   useEffect(() => {
-    if (purchaseHash && (transactionStatus === 'success' || transactionStatus === 'error')) {
+    if (internalApprovalConfirmed && pendingPurchaseInfo && purchaseMarketWriteAsync) {
+      (async () => {
+        try {
+          const txHash = await purchaseMarketWriteAsync({
+            address: GEEK_COURSE_MARKET_ADDRESS,
+            abi: geekCourseMarketABI,
+            functionName: 'purchaseCourse',
+            args: [pendingPurchaseInfo.web2CourseId],
+          });
+          setEffectivePurchaseHash(txHash);
+        } catch (err: any) {
+          console.error("发起课程购买时出错 (post-approval):", err);
+          setEffectivePurchaseError(err);
+          setPurchasingCourseId(null); 
+          setPendingPurchaseInfo(null);
+        }
+      })();
+    }
+  }, [internalApprovalConfirmed, pendingPurchaseInfo, purchaseMarketWriteAsync, geekCourseMarketABI]);
+
+  useEffect(() => {
+    if (!purchasingCourseId) {
+      setEffectiveIsConfirming(false);
+      return;
+    }
+
+    if (pendingPurchaseInfo) { 
+      setEffectiveIsConfirming(internalIsConfirmingApproval);
+      setEffectivePurchaseError(internalApproveTxError || internalApprovalConfirmationError);
+      setEffectivePurchaseConfirmed(false);
+    } else { 
+      setEffectiveIsConfirming(internalIsConfirmingMarket);
+      setEffectivePurchaseError(internalMarketPurchaseTxError || internalMarketPurchaseConfirmationError);
+      setEffectivePurchaseConfirmed(internalMarketPurchaseConfirmed);
+    }
+  }, [
+    purchasingCourseId, pendingPurchaseInfo,
+    internalIsConfirmingApproval, internalApproveTxError, internalApprovalConfirmationError,
+    internalIsConfirmingMarket, internalMarketPurchaseTxError, internalMarketPurchaseConfirmationError, internalMarketPurchaseConfirmed
+  ]);
+  
+  useEffect(() => {
+    if (!purchasingCourseId) return;
+
+    const approvalFailed = internalApproveTxHash && internalApprovalStatus === 'error';
+    const marketPurchaseFinalized = internalMarketPurchaseTxHash && (internalMarketPurchaseStatus === 'success' || internalMarketPurchaseStatus === 'error');
+
+    if (pendingPurchaseInfo && approvalFailed) {
+      setPurchasingCourseId(null);
+      setPendingPurchaseInfo(null);
+    } else if (!pendingPurchaseInfo && marketPurchaseFinalized) {
       setPurchasingCourseId(null);
     }
-  }, [transactionStatus, purchaseHash]);
+  }, [
+    purchasingCourseId, pendingPurchaseInfo, 
+    internalApproveTxHash, internalApprovalStatus, 
+    internalMarketPurchaseTxHash, internalMarketPurchaseStatus
+  ]);
 
-  // Effect to refetch user's purchased courses after a successful purchase
   useEffect(() => {
-    if (purchaseConfirmed) {
-      fetchUserPurchasedCourses(); // Refetch user's courses
+    if (internalMarketPurchaseConfirmed) {
+      fetchUserPurchasedCourses();
+      setPendingPurchaseInfo(null);
     }
-  }, [purchaseConfirmed, fetchUserPurchasedCourses]);
-
-  // 合并购买过程中的错误
-  const purchaseError = purchaseTxError || purchaseConfirmationError;
+  }, [internalMarketPurchaseConfirmed, fetchUserPurchasedCourses]);
 
   return {
-    // 课程列表
     courses,
-    isLoadingCourses: isLoadingCourses || isLoadingCount || isLoadingUserCourses, // Combined loading state
+    isLoadingCourses: isLoadingCourses || isLoadingCount,
     fetchCoursesError: fetchCoursesError || courseCountError,
     courseCount,
-    refetchCourses, // Exporting refetchCourses
+    refetchCourses,
 
-    // 购买课程
     purchaseCourse,
-    purchasingCourseId, // 导出当前正在购买的课程 ID
-    isConfirmingPurchase, // 可以用来显示确认中的状态，如果需要更细致的区分
-    purchaseConfirmed,
-    purchaseError,
-    purchaseHash,
+    purchasingCourseId,
+    isConfirmingPurchase: effectiveIsConfirming,
+    purchaseConfirmed: effectivePurchaseConfirmed,
+    purchaseError: effectivePurchaseError,
+    purchaseHash: effectivePurchaseHash,
 
-    // 用户购买的课程
     userPurchasedCourseIds,
+    isLoadingUserCourses,
   };
 }
