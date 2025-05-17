@@ -16,7 +16,7 @@ export interface Token {
 
 export const tokens: Token[] = [
   { symbol: "ETH", name: "Ethereum", rate: 1, decimals: 18 },
-  { symbol: "GEEK", name: "Geek Token", rate: 2000, address: GEEK_TOKEN_ADDRESS, decimals: 18 },
+  { symbol: "GEEK", name: "Geek Token", rate: 1000, address: GEEK_TOKEN_ADDRESS, decimals: 0 },
 ]
 
 export function useToken() {
@@ -25,7 +25,7 @@ export function useToken() {
   const [fromAmount, setFromAmount] = useState("")
   const [toAmount, setToAmount] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [exchangeRate, setExchangeRate] = useState<number>(2000)
+  const [exchangeRate, setExchangeRate] = useState<number>(1000)
   const [error, setError] = useState<string | null>(null)
 
   // Fetch exchange rate from smart contract
@@ -51,7 +51,7 @@ export function useToken() {
           try {
             // Get exchange rate from token contract
             const tokensPerEth = await geekTokenContract.TOKENS_PER_ETH()
-            const rate = Number(tokensPerEth) / 1e18 // Convert from wei to ETH
+            const rate = Number(tokensPerEth) // GEEK token has 0 decimals
             setExchangeRate(rate)
 
             // Update token rates
@@ -163,25 +163,17 @@ export function useToken() {
           toast.success("Successfully swapped ETH for GEEK tokens!")
         } else if (fromToken.symbol === "GEEK" && toToken.symbol === "ETH") {
           // GEEK to ETH
-          const geekAmount = ethers.parseEther(fromAmount)
+          const geekAmount = ethers.parseUnits(fromAmount, 0) // GEEK token has 0 decimals
           
-          // First approve the contract to spend GEEK tokens
-          console.log("Approving GEEK tokens:", {
+          // The approve call was removed here as it's unnecessary for the current sellTokens contract logic
+          // which uses _burn(msg.sender, ...)
+          console.log("Selling GEEK tokens for ETH:", {
             contractAddress: GEEK_TOKEN_ADDRESS,
             geekAmount: geekAmount.toString(),
             fromAmount,
             toAmount
-          })
+          });
           
-          const approveTx = await geekTokenContract.approve(
-            GEEK_TOKEN_ADDRESS,
-            geekAmount
-          )
-          console.log("Approval transaction sent:", approveTx.hash)
-          await approveTx.wait()
-          
-          // Then sell GEEK tokens for ETH
-          console.log("Selling GEEK tokens for ETH")
           const tx = await geekTokenContract.sellTokens(geekAmount)
           console.log("Sell transaction sent:", tx.hash)
           await tx.wait()
@@ -220,4 +212,4 @@ export function useToken() {
     handleExchange,
     tokens
   }
-} 
+}

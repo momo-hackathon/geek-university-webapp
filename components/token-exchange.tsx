@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowDownUp, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToken, tokens } from "@/hooks/useWrapToken"
-import { formatUnits } from "ethers"
+import { formatUnits, parseUnits } from "ethers"
 
 export default function TokenExchange() {
   const {
@@ -126,9 +126,9 @@ export default function TokenExchange() {
                 </div>
               </div>
 
-              {exchangeRate && (
+              {exchangeRate !== null && typeof exchangeRate === 'number' && (
                 <div className="text-sm text-muted-foreground text-center">
-                  Exchange Rate: 1 {fromToken.symbol} = {formatUnits(exchangeRate.toString(), 18)} {toToken.symbol}
+                  Exchange Rate: 1 {fromToken.symbol} = {formatUnits(parseUnits(exchangeRate.toFixed(18), 18), 18)} {toToken.symbol}
                 </div>
               )}
 
