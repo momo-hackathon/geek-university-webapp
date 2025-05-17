@@ -142,23 +142,32 @@ export default function AIAssistant() {
 
     try {
       // 调用 agent 获取响应
-      const workflow = await client.getWorkflow("web3TutorWorkflow");
-      const response = await workflow.execute({
-        question: input,
-        context: {
-          userId,
-          sessionId,
-          previousQuestions: messages
-            .filter(m => m.isUser)
-            .map(m => m.text),
+      const response = await fetch(`http://localhost:4111/api/agents/web3TutorAgent/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: input
+          }],
+          threadId: sessionId,
+          resourceId: userId
+        })
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Agent API error:', response.status, errorText);
+        throw new Error('Failed to get response from agent');
+      }
+
+      const data = await response.json();
       
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: typeof response.results === 'object' && response.results !== null 
-          ? JSON.stringify(response.results)
-          : "Sorry, I couldn't process your request.",
+        text: data.text || "Sorry, I couldn't process your request.",
         isUser: false,
       }
       setMessages((prev) => [...prev, aiResponse])
@@ -197,23 +206,32 @@ export default function AIAssistant() {
     setIsLoading(true)
 
     try {
-      const workflow = await client.getWorkflow("web3TutorWorkflow");
-      const response = await workflow.execute({
-        question,
-        context: {
-          userId,
-          sessionId,
-          previousQuestions: messages
-            .filter(m => m.isUser)
-            .map(m => m.text),
+      const response = await fetch(`http://localhost:4111/api/agents/web3TutorAgent/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: question
+          }],
+          threadId: sessionId,
+          resourceId: userId
+        })
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Agent API error:', response.status, errorText);
+        throw new Error('Failed to get response from agent');
+      }
+
+      const data = await response.json();
       
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: typeof response.results === 'object' && response.results !== null 
-          ? JSON.stringify(response.results)
-          : "Sorry, I couldn't process your request.",
+        text: data.text || "Sorry, I couldn't process your request.",
         isUser: false,
       }
       setMessages((prev) => [...prev, aiResponse])
