@@ -1,129 +1,40 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-
-// Sample course data
-const courses = [
-  {
-    id: 1,
-    name: {
-      en: "Blockchain Fundamentals",
-      zh: "区块链基础",
-      ko: "블록체인 기초",
-    },
-    description: {
-      en: "Learn the core concepts of blockchain technology and how it works.",
-      zh: "学习区块链技术的核心概念及其工作原理。",
-      ko: "블록체인 기술의 핵심 개념과 작동 방식을 배웁니다.",
-    },
-    price: 199,
-    image: "/placeholder.svg?height=400&width=600",
-    level: {
-      en: "Beginner",
-      zh: "初级",
-      ko: "초급",
-    },
-    duration: {
-      en: "4 weeks",
-      zh: "4 周",
-      ko: "4 주",
-    },
-  },
-  {
-    id: 2,
-    name: {
-      en: "Smart Contract Development",
-      zh: "智能合约开发",
-      ko: "스마트 계약 개발",
-    },
-    description: {
-      en: "Master Solidity and build secure smart contracts for Ethereum.",
-      zh: "掌握 Solidity 并为以太坊构建安全的智能合约。",
-      ko: "Solidity를 마스터하고 이더리움을 위한 안전한 스마트 계약을 구축합니다.",
-    },
-    price: 299,
-    image: "/placeholder.svg?height=400&width=600",
-    level: {
-      en: "Intermediate",
-      zh: "中级",
-      ko: "중급",
-    },
-    duration: {
-      en: "6 weeks",
-      zh: "6 周",
-      ko: "6 주",
-    },
-  },
-  {
-    id: 3,
-    name: {
-      en: "DApp Development",
-      zh: "去中心化应用开发",
-      ko: "DApp 개발",
-    },
-    description: {
-      en: "Create full-stack decentralized applications with React and Web3.js.",
-      zh: "使用 React 和 Web3.js 创建全栈去中心化应用。",
-      ko: "React와 Web3.js로 풀스택 분산 애플리케이션을 만듭니다.",
-    },
-    price: 349,
-    image: "/placeholder.svg?height=400&width=600",
-    level: {
-      en: "Advanced",
-      zh: "高级",
-      ko: "고급",
-    },
-    duration: {
-      en: "8 weeks",
-      zh: "8 周",
-      ko: "8 주",
-    },
-  },
-  {
-    id: 4,
-    name: {
-      en: "NFT Marketplace Creation",
-      zh: "NFT 市场创建",
-      ko: "NFT 마켓플레이스 제작",
-    },
-    description: {
-      en: "Build your own NFT marketplace from scratch with ERC-721 and ERC-1155.",
-      zh: "使用 ERC-721 和 ERC-1155 从头开始构建您自己的 NFT 市场。",
-      ko: "ERC-721 및 ERC-1155로 처음부터 자신만의 NFT 마켓플레이스를 구축합니다.",
-    },
-    price: 399,
-    image: "/placeholder.svg?height=400&width=600",
-    level: {
-      en: "Advanced",
-      zh: "高级",
-      ko: "고급",
-    },
-    duration: {
-      en: "10 weeks",
-      zh: "10 周",
-      ko: "10 주",
-    },
-  },
-]
+import { useCourseData, type Course as FetchedCourse } from "@/hooks/useCourse"
+import { ethers } from "ethers"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function CourseListing() {
   const [currentLanguage, setCurrentLanguage] = useState("en")
   const [mounted, setMounted] = useState(false)
+  const { toast } = useToast()
+
+  const { 
+    courses: fetchedCourses, 
+    isLoadingCourses, 
+    fetchCoursesError,
+    purchaseCourse,
+    isPurchasing,
+    purchaseConfirmed,
+    purchaseError,
+    purchaseHash,
+    userPurchasedCourseIds, 
+    refetchCourses, // Changed from refetchAllData
+  } = useCourseData()
 
   useEffect(() => {
     setMounted(true)
-    // Check if there's a stored language preference
     const storedLang = localStorage.getItem("preferredLanguage")
     if (storedLang) {
       setCurrentLanguage(storedLang)
     }
 
-    // Set up a listener for language changes
     const handleStorageChange = () => {
       const lang = localStorage.getItem("preferredLanguage")
       if (lang) {
@@ -136,6 +47,23 @@ export default function CourseListing() {
       window.removeEventListener("storage", handleStorageChange)
     }
   }, [])
+
+  useEffect(() => {
+    if (purchaseConfirmed) {
+      toast({
+        title: "Purchase Successful!",
+        description: `Course purchased. Transaction Hash: ${purchaseHash}`,
+        variant: "default",
+      })
+    }
+    if (purchaseError) {
+      toast({
+        title: "Purchase Failed",
+        description: purchaseError.message || "An unknown error occurred.",
+        variant: "destructive",
+      })
+    }
+  }, [purchaseConfirmed, purchaseError, purchaseHash, toast])
 
   if (!mounted) return null
 
@@ -161,14 +89,32 @@ export default function CourseListing() {
     }
   }
 
-  const getViewMoreText = () => {
+  const getPurchaseButtonText = (course: FetchedCourse) => {
+    if (userPurchasedCourseIds.has(course.id)) { // Use course.id (bigint) directly
+      switch (currentLanguage) {
+        case "zh": return "已购买";
+        case "ko": return "구매 완료";
+        default: return "Purchased";
+      }
+    }
+    if (!course.isActive) {
+      switch (currentLanguage) {
+        case "zh": return "不可购买";
+        case "ko": return "구매 불가";
+        default: return "Not Available";
+      }
+    }
+    if (isPurchasing) {
+      switch (currentLanguage) {
+        case "zh": return "购买中...";
+        case "ko": return "구매 중...";
+        default: return "Purchasing...";
+      }
+    }
     switch (currentLanguage) {
-      case "zh":
-        return "查看更多"
-      case "ko":
-        return "더 보기"
-      default:
-        return "View More"
+      case "zh": return "购买课程";
+      case "ko": return "코스 구매";
+      default: return "Purchase Course";
     }
   }
 
@@ -183,6 +129,41 @@ export default function CourseListing() {
     }
   }
 
+  const handlePurchase = async (web2CourseId: string) => {
+    try {
+      await purchaseCourse(web2CourseId)
+    } catch (error: any) {
+      console.error("Purchase initiation failed:", error.message)
+      if (!purchaseError) {
+        toast({
+          title: "Purchase Error",
+          description: error.message || "Could not initiate purchase.",
+          variant: "destructive",
+        })
+      }
+    }
+  }
+
+  if (isLoadingCourses) {
+    return (
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container text-center">
+          <p>Loading courses...</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (fetchCoursesError) {
+    return (
+      <section className="py-16 md:py-24 bg-muted/30">
+        <div className="container text-center">
+          <p>Error fetching courses: {fetchCoursesError.message}</p>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="py-16 md:py-24 bg-muted/30">
       <div className="container">
@@ -192,43 +173,43 @@ export default function CourseListing() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {courses.map((course) => (
+          {fetchedCourses.map((course: FetchedCourse) => (
             <Card
-              key={course.id}
+              key={course.id.toString()} // key can remain string
               className="overflow-hidden backdrop-blur-sm bg-card/80 border-muted h-full flex flex-col"
             >
               <div className="aspect-video relative overflow-hidden">
                 <Image
-                  src={course.image || "/placeholder.svg"}
-                  alt={course.name[currentLanguage as keyof typeof course.name] || course.name.en}
+                  src={`${course.imageUrl}?height=400&width=600`}
+                  alt={course.name}
                   fill
                   className="object-cover transition-transform hover:scale-105"
                 />
-                <div className="absolute top-2 right-2">
-                  <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
-                    {course.level[currentLanguage as keyof typeof course.level] || course.level.en}
-                  </Badge>
-                </div>
               </div>
-              <CardHeader className="p-4 mt-4">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-bold text-lg">
-                    {course.name[currentLanguage as keyof typeof course.name] || course.name.en}
+              <CardHeader className="p-4">
+                <div>
+                  <h3 className="font-semibold text-lg leading-tight">
+                    {course.name}
                   </h3>
-                  <div className="text-primary font-bold">${course.price}</div>
+                  <div className="text-primary font-bold text-lg whitespace-nowrap">
+                    {ethers.formatUnits(course.price, 0)} Geek
+                  </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 pt-0 flex-grow">
-                <p className="text-sm text-muted-foreground">
-                  {course.description[currentLanguage as keyof typeof course.description] || course.description.en}
+              <CardContent className="p-4 pt-2 flex-grow">
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                  {course.description}
                 </p>
               </CardContent>
-              <CardFooter className="p-4 pt-0 mt-4 mb-4">
-                <Link href="/course" className="w-full">
-                  <Button variant="outline" className="w-full rounded-full">
-                    {getViewMoreText()}
-                  </Button>
-                </Link>
+              <CardFooter className="p-4 pt-0">
+                <Button 
+                  variant="outline" 
+                  className="w-full rounded-full"
+                  onClick={() => handlePurchase(course.web2CourseId)}
+                  disabled={isPurchasing || !course.isActive || userPurchasedCourseIds.has(course.id)} // Use course.id (bigint)
+                >
+                  {getPurchaseButtonText(course)}
+                </Button>
               </CardFooter>
             </Card>
           ))}
