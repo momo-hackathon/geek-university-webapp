@@ -20,12 +20,13 @@ export default function CourseListing() {
     isLoadingCourses, 
     fetchCoursesError,
     purchaseCourse,
-    isPurchasing,
+    purchasingCourseId, // 新增：当前正在购买的课程 ID
+    isConfirmingPurchase, // 新增：交易是否正在确认中
     purchaseConfirmed,
     purchaseError,
     purchaseHash,
     userPurchasedCourseIds, 
-    refetchCourses, // Changed from refetchAllData
+    refetchCourses, 
   } = useCourseData()
 
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function CourseListing() {
   }
 
   const getPurchaseButtonText = (course: FetchedCourse) => {
-    if (userPurchasedCourseIds.has(course.id)) { // Use course.id (bigint) directly
+    if (userPurchasedCourseIds.has(course.id)) {
       switch (currentLanguage) {
         case "zh": return "已购买";
         case "ko": return "구매 완료";
@@ -104,11 +105,12 @@ export default function CourseListing() {
         default: return "Not Available";
       }
     }
-    if (isPurchasing) {
+    // 检查当前课程是否正在购买或确认中
+    if (purchasingCourseId === course.web2CourseId) {
       switch (currentLanguage) {
-        case "zh": return "购买中...";
-        case "ko": return "구매 중...";
-        default: return "Purchasing...";
+        case "zh": return isConfirmingPurchase ? "确认中..." : "购买中...";
+        case "ko": return isConfirmingPurchase ? "확인 중..." : "구매 중...";
+        default: return isConfirmingPurchase ? "Confirming..." : "Purchasing...";
       }
     }
     switch (currentLanguage) {
@@ -206,7 +208,8 @@ export default function CourseListing() {
                   variant="outline" 
                   className="w-full rounded-full"
                   onClick={() => handlePurchase(course.web2CourseId)}
-                  disabled={isPurchasing || !course.isActive || userPurchasedCourseIds.has(course.id)} // Use course.id (bigint)
+                  // 更新禁用条件：仅当“当前课程”正在购买，或已被购买，或不可购买时禁用
+                  disabled={(purchasingCourseId === course.web2CourseId) || !course.isActive || userPurchasedCourseIds.has(course.id)}
                 >
                   {getPurchaseButtonText(course)}
                 </Button>
