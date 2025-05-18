@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation"
 import { useAccount, useChainId } from 'wagmi'
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CustomConnectButton } from '@/components/connect-button'
-import Image from "next/image"
 
 const languages = [
   { code: "en", name: "English" },
@@ -59,7 +58,7 @@ export default function Header() {
       <div className="container flex h-14 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Image src="logo.png" alt="Geek University" width={32} height={32} />
+            <span className="inset-0 flex items-center justify-center font-bold bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent">Geek University</span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             {menuItems.map((item) => (
