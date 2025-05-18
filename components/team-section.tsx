@@ -4,29 +4,17 @@ import { Github, Linkedin, Twitter } from "lucide-react"
 
 const teamMembers = [
   {
-    name: "Alex Chen",
+    name: "SenMu",
     role: "Blockchain Developer",
     bio: "Experienced blockchain developer with 5+ years in Ethereum and Solidity.",
-    image: "/placeholder.svg?height=300&width=300",
+    image: 'senmu.png', // GameFi style avatar 1
   },
   {
-    name: "Sarah Johnson",
-    role: "Web3 Educator",
-    bio: "Former professor with a passion for teaching blockchain concepts to newcomers.",
-    image: "/placeholder.svg?height=300&width=300",
-  },
-  {
-    name: "Michael Wong",
-    role: "DeFi Specialist",
-    bio: "Expert in decentralized finance protocols and tokenomics.",
-    image: "/placeholder.svg?height=300&width=300",
-  },
-  {
-    name: "Ling Wei",
-    role: "Community Manager",
-    bio: "Building bridges between developers and the broader Web3 community.",
-    image: "/placeholder.svg?height=300&width=300",
-  },
+    name: "Lin",
+    role:"Blockchain Developer",
+    bio: "Experienced blockchain developer with 5+ years in Ethereum and Solidity.",
+    image: "lin.png", // GameFi style avatar 2
+  }
 ]
 
 export default function TeamSection() {

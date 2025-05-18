@@ -12,8 +12,8 @@ export default function Home() {
       <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading...</div>}>
         <Banner />
         <ProjectDescription />
-        <CourseListing />
         <TokenExchange />
+        <CourseListing />
         <TeamSection />
         <Footer />
       </Suspense>

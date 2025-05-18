@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { useAccount, useChainId } from 'wagmi'
 import { ThemeToggle } from "@/components/theme-toggle"
 import { CustomConnectButton } from '@/components/connect-button'
+import Image from "next/image"
 
 const languages = [
   { code: "en", name: "English" },
@@ -58,12 +59,7 @@ export default function Header() {
       <div className="container flex h-14 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <div className="relative h-8 w-8 overflow-hidden rounded-full bg-gradient-to-br from-purple-500 to-blue-500">
-              <span className="absolute inset-0 flex items-center justify-center font-bold text-white">W3</span>
-            </div>
-            <span className="hidden font-bold sm:inline-block">
-              {currentLanguage === "en" ? "Web3 Course" : currentLanguage === "zh" ? "Web3 课程" : "Web3 코스"}
-            </span>
+            <Image src="logo.png" alt="Geek University" width={32} height={32} />
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             {menuItems.map((item) => (
