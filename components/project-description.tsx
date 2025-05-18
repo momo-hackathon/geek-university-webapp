@@ -3,12 +3,12 @@ import { CheckCircle } from "lucide-react"
 
 export default function ProjectDescription() {
   const features = [
-    "Comprehensive Web3 curriculum designed by industry experts",
-    "Hands-on projects with real-world blockchain applications",
-    "Interactive coding exercises and challenges",
-    "Community support and networking opportunities",
-    "Certification upon course completion",
-    "Lifetime access to course materials and updates",
+    "Access premium courses using GEEK tokens",
+    "Course content automatically integrated into AI knowledge base via RAG technology",
+    "Publish related articles and earn GEEK token rewards after learning",
+    "Additional rewards for articles certified by DAO organization",
+    "Earn unique NFT badges upon course completion",
+    "Participate in DAO governance with sufficient NFT badges",
   ]
 
   return (
@@ -17,11 +17,11 @@ export default function ProjectDescription() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <div className="inline-block rounded-lg bg-muted px-3 py-1 text-sm">About Our Platform</div>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Learn Web3 Development From The Ground Up</h2>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Geek University: A New Paradigm for On-chain Learning and Community Governance</h2>
             <p className="text-muted-foreground">
-              Our Web3 course platform is designed to take you from blockchain basics to advanced decentralized
-              application development. Whether you're a complete beginner or an experienced developer looking to
-              transition to Web3, we have the perfect learning path for you.
+              Geek University is an innovative on-chain learning platform that integrates course learning, article publishing, DAO governance, and community interaction.
+              By holding GEEK tokens, you can access premium course content, participate in community governance, and earn rewards through creation.
+              Our platform utilizes RAG technology to ensure seamless integration of learning content with the AI knowledge base, providing learners with the best possible learning experience.
             </p>
             <ul className="space-y-3">
               {features.map((feature, index) => (
@@ -36,7 +36,7 @@ export default function ProjectDescription() {
                 Start Learning
               </Button>
               <Button variant="outline" className="rounded-full">
-                View Curriculum
+                View Courses
               </Button>
             </div>
           </div>

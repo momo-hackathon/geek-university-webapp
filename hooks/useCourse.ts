@@ -96,7 +96,7 @@ export function useCourseData() {
         if (result.status === 'success' && result.result) {
           const [web2CourseId, name, price, isActive, creator] = result.result as [string, string, bigint, boolean, `0x${string}`];
           const imageUrl = imageUrlLists[index % imageUrlLists.length]; 
-          const description = `这是关于 ${name} 课程的详细描述。学习这门课程，你将掌握 ${name} 的核心知识和实践技能。非常适合希望在相关领域深入发展的学员。`;
+          const description = `This is a detailed description of the ${name} course. By taking this course, you will master the core knowledge and practical skills of ${name}. Perfect for students who want to develop their expertise in this field.`;
           
           fetchedCoursesData.push({
             id: BigInt(index + 1),

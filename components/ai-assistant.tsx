@@ -293,7 +293,7 @@ export default function AIAssistant() {
         onClick={toggleChat}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 z-50"
       >
-        <Bot className="h-6 w-6" />
+        <Bot className="h-12 w-12" />
       </Button>
 
       {/* 聊天窗口 */}
@@ -304,7 +304,7 @@ export default function AIAssistant() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             className={`fixed bottom-24 right-6 bg-background border rounded-lg shadow-lg overflow-hidden z-50 ${
-              isExpanded ? "w-[90vw] h-[80vh] max-w-4xl" : "w-[350px] h-[500px]"
+              isExpanded ? "w-[90vw] h-[80vh] max-w-4xl" : "w-[380px] h-[700px]"
             }`}
           >
             {/* 头部 */}
@@ -332,7 +332,7 @@ export default function AIAssistant() {
             </div>
 
             {/* 消息列表 */}
-            <div className="p-4 overflow-y-auto h-[calc(100%-120px)]">
+            <div className="p-4 overflow-y-auto h-[calc(100%-135px)]">
               {messages.map((message) => (
                 <div key={message.id} className={`mb-4 ${message.isUser ? "flex justify-end" : "flex justify-start"}`}>
                   <div
@@ -382,7 +382,7 @@ export default function AIAssistant() {
             </div>
 
             {/* 输入框 */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t h-[60px]">
               <div className="flex gap-2">
                 <Input
                   ref={inputRef}
