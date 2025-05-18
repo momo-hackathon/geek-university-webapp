@@ -4,15 +4,15 @@ import { Github, Linkedin, Twitter } from "lucide-react"
 
 const teamMembers = [
   {
-    name: "SenMu",
-    role: "Blockchain Developer",
-    bio: "Experienced blockchain developer with 5+ years in Ethereum and Solidity.",
+    name: "Senmu",
+    role: "Web Developer",
+    bio: "Experienced blockchain developer with 6+ years in web.",
     image: 'senmu.png', // GameFi style avatar 1
   },
   {
     name: "Lin",
-    role:"Blockchain Developer",
-    bio: "Experienced blockchain developer with 5+ years in Ethereum and Solidity.",
+    role:"Web Developer",
+    bio: "Experienced blockchain developer with 5+ years in web.",
     image: "lin.png", // GameFi style avatar 2
   }
 ]
